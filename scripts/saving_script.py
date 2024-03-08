@@ -1,7 +1,7 @@
 import pandas as pd
 from pymongo import MongoClient
 import datetime
-
+import scripts.similar as similar
 # Connect to MongoDB
 client = MongoClient(
     "mongodb+srv://abdelrhmanarafa:SzbZ07ndtx0wlIg7@deployment.44r3nxg.mongodb.net/?retryWrites=true&w=majority&appName=deployment"
@@ -45,6 +45,7 @@ for index, row in data.iterrows():
 
     # Split skills and insert each unique skill into skill_collection
     skills = set(row["skills_and_tools_info"].split(" "))
+    cleaned_skills = similar.clean_skills(skills, similar.similar_skills)
     skill_ids = []
     for skill in skills:
         existing_skill = skill_collection.find_one({"skill_name": skill})
