@@ -275,7 +275,7 @@ def salary(x):
 
 
 # Apply salary mapping
-df["salary"] = df["key_career"].apply(salary)
+df["salary"] = df["career_level"].apply(salary)
 
 
 # Function to remove punctuations from text

@@ -1,12 +1,14 @@
 import pandas as pd
 from pymongo import MongoClient
 import datetime
-import scripts.similar as similar
+
+import similar  
+
 # Connect to MongoDB
 client = MongoClient(
     "mongodb+srv://abdelrhmanarafa:SzbZ07ndtx0wlIg7@deployment.44r3nxg.mongodb.net/?retryWrites=true&w=majority&appName=deployment"
 )
-db = client["Wuzzuf"]  # Change 'your_database' to your actual database name
+db = client["JobPostings"]
 
 # Define collection names
 company_collection = db["Companies"]
@@ -16,7 +18,7 @@ job_collection = db["Jobs"]
 
 today = datetime.datetime.now().strftime("%Y-%m-%d")
 filename = f"{today}.csv"
-# Read data from CSV file
+
 data = pd.read_csv(filename)
 
 # Iterate over each row
@@ -47,7 +49,7 @@ for index, row in data.iterrows():
     skills = set(row["skills_and_tools_info"].split(" "))
     cleaned_skills = similar.clean_skills(skills, similar.similar_skills)
     skill_ids = []
-    for skill in skills:
+    for skill in cleaned_skills:
         existing_skill = skill_collection.find_one({"skill_name": skill})
         if not existing_skill:
             # Insert skill if it doesn't exist
@@ -64,12 +66,12 @@ for index, row in data.iterrows():
         "job_type": row["job_type"],
         "company_id": company_id,
         "location_id": location_id,
-        "num_of_people": row["num_of_people"],
+        "applyed_people": row["num_of_people"],
         "experience": row["experience_needed"],
         "career_level": row["career_level"],
         "education_level": row["education_level"],
         "gender": row["gender"],
-        "salary": row["salary"],
+        "salary_range": row["salary"],
         "key_job": row["key_job"],
         "posted_datetime": row["posted_datetime"],
         "month": row["month"],
