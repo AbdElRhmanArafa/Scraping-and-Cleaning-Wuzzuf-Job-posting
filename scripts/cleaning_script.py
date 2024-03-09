@@ -426,5 +426,7 @@ df["job_description_info"] = df["job_description_info"].apply(convert_to_str)
 df["job_requirements_info"] = df["job_requirements_info"].apply(convert_to_str)
 df["skills_and_tools_info"] = df["skills_and_tools_info"].apply(convert_to_str)
 
+# To remove any rows containing "Desk" in the job_name
+df = df[~df['job_name'].str.contains('Desk')]
 # Save the processed dataframe to CSV
 df.to_csv(filename)
