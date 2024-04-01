@@ -32,6 +32,7 @@ with open(filename, "w", newline="", encoding="utf-8") as file:
             "job_description",
             "job_requirements",
             "key_job",
+            "url_company",
         ]
     )
 
@@ -82,6 +83,10 @@ with open(filename, "w", newline="", encoding="utf-8") as file:
                     .replace("-", "")
                     .strip()
                 )
+                url_company = d.find("a", attrs={"class": "css-17s97q8"})[
+                    "href"
+                ]
+
                 job_location = (
                     d.find("span", attrs={"class": "css-5wys0k"})
                     .get_text()
@@ -195,6 +200,7 @@ with open(filename, "w", newline="", encoding="utf-8") as file:
                     job_description,
                     job_requirements,
                     key_job,
+                    url_company,
                 ]
                 writer.writerow(row)
                 print(row)

@@ -38,7 +38,7 @@ similar_skills = {
     "Linux": ["linux", "unix"],
     "MySQL": ["mysql"],
     "PostgreSQL": ["postgresql"],
-    "MongoDB": ["mongodb","Mongodb","MongoDB"],
+    "MongoDB": ["mongodb", "Mongodb", "MongoDB"],
     "SQL": ["sql"],
     "NoSQL": ["nosql"],
     "MSSQL": ["mssql", "microsoftsqlserver"],
@@ -351,6 +351,13 @@ similar_skills = {
     "Papertrail": ["papertrail"],
     "Graylog": ["graylog"],
     "Seq": ["seq"],
+    "WordPress": ["wordpress", "wordpresscom", "wp"],
+    "microservices": [
+        "microservices",
+        "micro service",
+        "micro-services",
+        "micro-service",
+    ],
 }
 
 
