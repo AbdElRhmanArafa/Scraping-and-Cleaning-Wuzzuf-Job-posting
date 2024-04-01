@@ -83,9 +83,13 @@ with open(filename, "w", newline="", encoding="utf-8") as file:
                     .replace("-", "")
                     .strip()
                 )
-                url_company = d.find("a", attrs={"class": "css-17s97q8"})[
-                    "href"
-                ]
+                try:
+                    url_company = d.find("a", attrs={"class": "css-17s97q8"})[
+                        "href"
+                    ]
+                except Exception as e:
+                    print("Confidential Company")
+                    url_company = None
 
                 job_location = (
                     d.find("span", attrs={"class": "css-5wys0k"})
