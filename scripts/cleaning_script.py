@@ -3,6 +3,9 @@ import re
 import spacy
 from nltk.corpus import stopwords
 import datetime
+import requests
+from bs4 import BeautifulSoup
+import random
 
 # Load English language model
 nlp = spacy.load("en_core_web_sm")
@@ -240,42 +243,38 @@ def filter_career(x):
 df["career_level"] = df["career_level"].apply(filter_career)
 
 
-# Function to map salary based on key career
 def salary(x):
-    if x == "Senior front end":
-        return "(25000,40000)"
-    elif x == "Mid-Level front end":
-        return "(15000,25000)"
-    elif x == "Entry Level front end":
-        return "(8000,15000)"
-    elif x == "Senior back end":
-        return "(25000,40000)"
-    elif x == "Mid-Level back end":
-        return "(15000,25000)"
-    elif x == "Entry Level back end":
-        return "(8000,15000)"
-    elif x == "Senior full stack":
-        return "(30000,45000)"
-    elif x == "Mid-Level full stack":
-        return "(18000,30000)"
-    elif x == "Entry Level full stack":
-        return "(10000,18000)"
-    elif x == "Entry Level Data Scientist":
-        return "(15000,25000)"
-    elif x == "Mid-Level Data Scientist":
-        return "(25000,40000)"
-    elif x == "Senior Data Scientist":
-        return "(40000,60000)"
-    elif x == "Entry Level DevOps":
-        return "(10000,20000)"
-    elif x == "Mid-Level DevOps":
-        return "(20000,35000)"
-    elif x == "Senior DevOps":
-        return "(30000,50000)"
+    salary_mapping = {
+        "Senior front end": (25000, 40000),
+        "Mid-Level front end": (15000, 25000),
+        "Entry Level front end": (8000, 15000),
+        "Senior back end": (25000, 40000),
+        "Mid-Level back end": (15000, 25000),
+        "Entry Level back end": (8000, 15000),
+        "Senior full stack": (30000, 45000),
+        "Mid-Level full stack": (18000, 30000),
+        "Entry Level full stack": (10000, 18000),
+        "Entry Level Data Scientist": (15000, 25000),
+        "Mid-Level Data Scientist": (25000, 40000),
+        "Senior Data Scientist": (40000, 60000),
+        "Entry Level DevOps": (10000, 20000),
+        "Mid-Level DevOps": (20000, 35000),
+        "Senior DevOps": (30000, 50000),
+    }
+    salary_range = salary_mapping.get(x)
+    if salary_range:
+        return salary_range
+    else:
+        random_key = random.choice(list(salary_mapping.keys()))
+        salary_range = salary_mapping.get(random_key)
+        return salary_range
 
 
-# Apply salary mapping
-df["salary"] = df["career_level"].apply(salary)
+for index, row in df.iterrows():
+    key_job = str(row["key_job"])
+    career_level = str(row["career_level"])
+    salary_range = salary(career_level + " " + key_job)
+    df.at[index, "salary"] = salary_range
 
 
 # Function to remove punctuations from text
@@ -427,6 +426,107 @@ df["job_requirements_info"] = df["job_requirements_info"].apply(convert_to_str)
 df["skills_and_tools_info"] = df["skills_and_tools_info"].apply(convert_to_str)
 
 # To remove any rows containing "Desk" in the job_name
-df = df[~df['job_name'].str.contains('Desk')]
+df = df[~df["job_name"].str.contains("Desk")]
+df["Social Media Links"] = ""
+
+for index, row in df.iterrows():
+    url = row["url_company"]
+    if pd.notnull(url):
+        response = requests.get(url)
+        soup = BeautifulSoup(response.text, "html.parser")
+        # Extract information from HTML Initialize variables to store extracted information
+        industry = None
+        company_size = None
+        Founded = None
+        profile_section = soup.find("div", {"id": "profile-section"})
+        if profile_section:
+            company_size_tag = profile_section.findAll("span")
+            for span in company_size_tag:
+                # Find spans with class css-3b60s (indicating label)
+                label_span = span.find("span", class_="css-3b60s")
+                if label_span:
+                    label = label_span.get_text(strip=True)
+                    # Extract location
+                    # Extract industry
+                    if "Industry" in label:
+                        industry = span.find(
+                            "span", class_="css-16heon9"
+                        ).get_text(strip=True)
+                    # Extract company size
+                    elif "Company Size" in label:
+                        company_size = span.find(
+                            "span", class_="css-16heon9"
+                        ).get_text(strip=True)
+                    elif "Founded" in label:
+                        Founded = span.find(
+                            "span", class_="css-16heon9"
+                        ).get_text(strip=True)
+        social_media_links = []
+
+        # Extracting links with specific class
+        links = soup.find_all("a", class_="css-u8fh7w")
+        for link in links:
+            social_media_links.append(link["href"])
+        website_url = ""
+
+        # Extracting website URL with specific class
+        website_link = soup.find("a", class_="css-cttont")
+        if website_link:
+            website_url = website_link["href"]
+            df.at[index, "Website"] = website_url
+
+        # Update DataFrame with extracted information
+        df.at[index, "Company Size"] = company_size
+        df.at[index, "Founded"] = Founded
+        df.at[index, "Specialities"] = industry
+        df.at[index, "Social Media Links"] = social_media_links
+
+
+def extract_data_from_url(url):
+    # Prepend 'http://' or 'https://' if scheme is missing
+    url = str(url)
+    if not url.startswith("http://") and not url.startswith("https://"):
+        url = "https://" + url
+
+    try:
+        html_content = requests.get(url, timeout=20)
+        soup = BeautifulSoup(html_content.text, "html.parser")
+
+        # Extract meta tags
+        meta_tags = soup.find_all("meta")
+
+        # Extract title tag
+        title_tag = soup.find("title")
+        title = title_tag.text if title_tag else "No title found"
+
+        # Extract description from meta tags
+        description = None
+        for tag in meta_tags:
+            if tag.get("name", "").lower() == "description":
+                description = tag.get("content")
+                break
+
+        og_image_tag = soup.find("meta", property="og:image")
+        og_image = (
+            og_image_tag.get("content") if og_image_tag else "No og:image found"
+        )
+
+        return title, description, og_image
+    except Exception as e:
+        print(f"Error processing URL {url}: {e}")
+        return "Error", "Error", "Error"
+
+
+# get mate-data
+for index, row in df.iterrows():
+    web_url = row["Website"]
+    if pd.notnull(web_url) and web_url != "nan":
+        title, description, og_image = extract_data_from_url(web_url)
+        # Update DataFrame with extracted information
+        df.at[index, "title"] = title
+        df.at[index, "description"] = description
+        df.at[index, "og_image"] = og_image
+
+
 # Save the processed dataframe to CSV
 df.to_csv(filename)
