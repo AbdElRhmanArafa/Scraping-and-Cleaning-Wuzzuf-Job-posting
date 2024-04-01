@@ -2,11 +2,11 @@ import pandas as pd
 from pymongo import MongoClient
 import datetime
 
-import similar  
+import similar
 
 # Connect to MongoDB
 client = MongoClient(
-    "mongodb+srv://abdelrhmanarafa:SzbZ07ndtx0wlIg7@deployment.44r3nxg.mongodb.net/?retryWrites=true&w=majority&appName=deployment"
+    "mongodb+srv://abdelrhmanarafa:SzbZ07ndtx0wlIg7@deployment.44r3nxg.mongodb.net/"
 )
 db = client["JobPostings"]
 
@@ -19,18 +19,30 @@ job_collection = db["Jobs"]
 today = datetime.datetime.now().strftime("%Y-%m-%d")
 filename = f"{today}.csv"
 
-data = pd.read_csv(filename)
+data = pd.read_csv("2024-04-01.csv")
 
 # Iterate over each row
 for index, row in data.iterrows():
     # Check if company exists, if not, insert into company_collection
-    company = company_collection.find_one({"company_name": row["company_name"]})
+    company_query = {"company_name": row["company_name"]}
+    new_company_data = {
+        "company_name": row["company_name"],
+        "Social Media Links": row["Social Media Links"],
+        "Website": row["Website"],
+        "Company Size": row["Company Size"],
+        "Founded": row["Founded"],
+        "Specialities": row["Specialities"],
+        "title": row["title"],
+        "description": row["description"],
+        "og_image": row["og_image"],
+    }
+    company = company_collection.find_one(company_query)
     if not company:
         # Insert company if it doesn't exist
-        company_id = company_collection.insert_one(
-            {"company_name": row["company_name"]}
-        ).inserted_id
+        company_id = company_collection.insert_one(new_company_data).inserted_id
     else:
+        # Update existing company document
+        company_collection.update_one(company_query, {"$set": new_company_data})
         company_id = company["_id"]
 
     # Check if location exists, if not, insert into location_collection
